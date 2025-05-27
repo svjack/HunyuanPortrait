@@ -10,6 +10,32 @@
 <a href='https://huggingface.co/tencent/HunyuanPortrait'><img src="https://img.shields.io/static/v1?label=HuggingFace&message=HunyuanPortrait&color=yellow"></a>
 </div>
 
+```bash
+git clone https://huggingface.co/datasets/svjack/Xiang_Float_After_Tomorrow_Head_SPLITED_Captioned
+
+#!/bin/bash
+
+# 定义目录和图片路径
+VIDEO_DIR="Xiang_Float_After_Tomorrow_Head_SPLITED_Captioned"
+IMAGE_PATH="wanye.jpeg"
+
+# 使用find命令安全地处理包含空格的文件名
+while IFS= read -r -d '' video_path; do
+    echo "Processing video: $video_path"
+
+    # 执行推理命令
+    python inference.py \
+        --config config/hunyuan-portrait.yaml \
+        --video_path "$video_path" \
+        --image_path "$IMAGE_PATH"
+
+    echo "Finished processing: $video_path"
+    echo "----------------------------------"
+done < <(find "$VIDEO_DIR" -name "*.mp4" -print0 | sort -z)
+
+echo "All videos processed!"
+```
+
 ## 🧩 Community Contributions
 If you develop/use HunyuanPortrait in your projects, welcome to let us know/sumbit a PR! 💖
 
