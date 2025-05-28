@@ -12,11 +12,13 @@
 
 ```bash
 git clone https://huggingface.co/datasets/svjack/Xiang_Float_After_Tomorrow_Head_SPLITED_Captioned
+git clone https://huggingface.co/datasets/svjack/Xiang_Card_After_Tomorrow_Adjust_Static_LatentSync_Videos
 
 #!/bin/bash
 
 # 定义目录和图片路径
-VIDEO_DIR="Xiang_Float_After_Tomorrow_Head_SPLITED_Captioned"
+#VIDEO_DIR="Xiang_Float_After_Tomorrow_Head_SPLITED_Captioned"
+VIDEO_DIR="Xiang_Card_After_Tomorrow_Adjust_Static_LatentSync_Videos"
 IMAGE_PATH="wanye.jpeg"
 
 # 使用find命令安全地处理包含空格的文件名
@@ -34,6 +36,88 @@ while IFS= read -r -d '' video_path; do
 done < <(find "$VIDEO_DIR" -name "*.mp4" -print0 | sort -z)
 
 echo "All videos processed!"
+
+import os
+import re
+from moviepy.editor import VideoFileClip, AudioFileClip
+from moviepy.video.fx.all import speedx  # 直接导入函数
+
+# 输入和输出路径
+mp3_dir = "After_Tomorrow_SPLITED"
+mp4_dir = "tmp"
+output_dir = "Kigurumi_HunyuanPortrait_After_Tomorrow_SPLITED_Captioned"
+
+# 确保输出目录存在
+os.makedirs(output_dir, exist_ok=True)
+
+def extract_number(filename):
+    """从文件名中提取数字前缀（如 '0001_明天过后.mp3' -> '0001'）"""
+    match = re.findall(r'(\d+)_明天过后', filename)
+    return match[0] if match else None
+
+# 构建数字前缀到文件的映射
+mp3_files = {}
+for f in os.listdir(mp3_dir):
+    if f.endswith('.mp3'):
+        num = extract_number(f)
+        if num:
+            mp3_files[num] = os.path.join(mp3_dir, f)
+
+mp4_files = {}
+for f in os.listdir(mp4_dir):
+    if f.endswith('.mp4'):
+        num = extract_number(f)
+        if num:
+            mp4_files[num] = os.path.join(mp4_dir, f)
+
+# 获取所有共同的前缀数字
+common_numbers = set(mp3_files.keys()) & set(mp4_files.keys())
+
+if not common_numbers:
+    print("错误: 没有找到可以匹配的MP3和MP4文件")
+    exit()
+
+# 按数字顺序处理
+for num in sorted(common_numbers):
+    mp3_path = mp3_files[num]
+    mp4_path = mp4_files[num]
+    output_path = os.path.join(output_dir, os.path.basename(mp4_path))
+    
+    print(f"正在处理: {num} (MP4: {os.path.basename(mp4_path)}, MP3: {os.path.basename(mp3_path)})")
+    
+    # 加载音频和视频
+    audio = AudioFileClip(mp3_path)
+    video = VideoFileClip(mp4_path)
+    
+    # 计算需要的速度因子
+    original_duration = video.duration
+    target_duration = audio.duration
+    speed_factor = original_duration / target_duration
+    
+    # 调整视频速度
+    if speed_factor != 1.0:
+        print(f"  调整视频速度: {speed_factor:.2f}x")
+        video = video.fx(speedx, speed_factor).set_duration(audio.duration) 
+    
+    # 设置音频
+    video = video.set_audio(audio)
+    
+    # 写入输出文件
+    video.write_videofile(
+    output_path,
+    codec='libx264',
+    audio_codec='aac',      # 必须取消注释
+    temp_audiofile='temp-audio.m4a',
+    remove_temp=True,
+    threads=4
+    )
+    
+    # 关闭剪辑以释放资源
+    audio.close()
+    video.close()
+
+print(f"处理完成！共处理了 {len(common_numbers)} 个文件")
+
 ```
 
 ## 🧩 Community Contributions
